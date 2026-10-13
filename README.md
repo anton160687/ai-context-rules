@@ -6,7 +6,7 @@ A set of practices for organizing the "interface" between a codebase and AI codi
 
 The goal is not "to make AI read less code", but **to help it understand as early as possible which code it doesn't need to read at all**.
 
-Based on the article [«Как устроить кодовую базу, с которой AI‑агентам дешевле работать»](https://habr.com/ru/articles/1093078/) (in Russian) and extended with battle-tested patterns.
+A battle-tested set of patterns.
 
 ## The 13 patterns
 
