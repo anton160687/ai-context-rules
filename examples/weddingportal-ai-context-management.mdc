@@ -1,0 +1,67 @@
+---
+description: Управление AI-контекстом — паттерны: минимум постоянного контекста, слои, карта, переиспользование, чистота + DRY знаний, запреты, метаданные, ограниченный поиск
+alwaysApply: true
+last_verified: 2026-10-13
+---
+
+# Управление AI-контекстом (weddingportal)
+
+Универсальная база с чеклистами: [.cursor/docs/ai-context-management-universal.md](../docs/ai-context-management-universal.md).
+
+## 5 принципов (кратко)
+
+1. **Minimize Permanent Context** — `AGENTS.md` = карта проекта, не энциклопедия. В постоянном контексте только то, что нужно большинству задач; остальное — по ссылкам.
+2. **Progressive Context** — знания слоями: `AGENTS.md` → правило домена → task-инструкция → golden example → исходники. Не грузить всё сразу.
+3. **Reduce Exploration** — карта проекта + golden examples + search-before-read (`rg`, symbol search, `git diff`).
+4. **Reuse Knowledge** — дорогое исследование → сохранить как переиспользуемое знание (`.cursor/docs/`, `common/registry.py`, `PROJECT_PRACTICES.md`).
+5. **Keep Context Clean** — устаревшее удалять/выносить. AI-док отвечает «как устроено сейчас и как менять», не «почему так стало».
+
+## Карта проекта (точки входа)
+
+- `starterkit/<app>/` — доменные apps (`wedding`, `pagebuilder`, `assistant`, `dashboards`, …). Бизнес-логика — `services.py` / `services/`, тонкие views.
+- `starterkit/common/` — shared kernel: `mixins.py`, `api_views.py`, `registry.py`, `page_meta.py`, `frontend.py`.
+- `starterkit/_templates/` — шаблоны; `starterkit/_keenthemes/` — тема KeenThemes.
+- `starterkit/assets/js/custom/` — custom JS: `util/portal-util.js`, `components/*`.
+- `.cursor/rules/` — краткие правила (django-oop, pagebuilder, vps-deploy, этот файл).
+- `.cursor/docs/` — детальные доки (pagebuilder-*, PROJECT_PRACTICES.md).
+- `deploy/` — VPS-деплой. Docker — `starterkit/docker-compose*.yml`; env — `starterkit/.env(.example)`.
+
+## Слои контекста по типу задачи
+
+- **Python/Django**: `AGENTS.md` → `.cursor/rules/django-oop-practices.mdc` → `.cursor/PROJECT_PRACTICES.md` → golden example → исходники.
+- **Pagebuilder**: `AGENTS.md` → `.cursor/rules/pagebuilder-architecture.mdc` → нужный `.cursor/docs/pagebuilder-*.md` → golden example → исходники.
+- **Деплой/VPS**: `AGENTS.md` → `.cursor/rules/vps-deploy-automation.mdc`.
+
+## Golden examples (эталонные реализации)
+
+| Задача | Смотри |
+|---|---|
+| JSON API | `starterkit/common/api_views.py` (`JsonApiView`) + `starterkit/wedding/api_views.py` |
+| CBV-страница портала | `starterkit/common/mixins.py` (`PortalPageMixin`) + `starterkit/wedding/views.py` |
+| Сервис / бизнес-сценарий | `starterkit/wedding/services/*.py` |
+| Pagebuilder-сервис | `starterkit/pagebuilder/services/*.py` |
+| Custom JS-компонент | `starterkit/assets/js/custom/components/portal-employee-picker.js` |
+| Миграция | `starterkit/wedding/migrations/` |
+
+## Дополнительные паттерны (кратко)
+
+- **Single Source of Truth** — канонично: `common/registry.py`, `.cursor/PROJECT_PRACTICES.md`; в rules/docs — только ссылки, не копипаста.
+- **Show, Don't Tell** — нетривиальные правила с `✅/❌` фрагментами (как в `PROJECT_PRACTICES.md`).
+- **Explicit Negative Constraints** — секции «Запрещено» в `.mdc`-правилах.
+- **Metadata & Freshness** — frontmatter (`description`, `globs`, `alwaysApply`); в `.cursor/docs/` добавлять `last_verified`.
+- **Predictable Layout & Naming** — `.cursor/docs/*.md`, `.cursor/rules/*.mdc`; новые знания — туда же.
+- **Bounded Search Scope** — не читать `secrets/`, `media/`, `starterkit/db.sqlite3`, `wordpress-main.zip`, зипы в `template/`, `node_modules`; поиск — по конкретной директории/glob.
+- **Cheap Entry Points** — `python manage.py test`, `docker compose ...` (см. `AGENTS.md`, `deploy/`).
+- **Definition of Done** — секция «Перед завершением задачи» в `django-oop-practices.mdc` и `PROJECT_PRACTICES.md`.
+
+## Reuse (не платить дважды за исследование)
+
+- Перед дублированием логики — свериться с `starterkit/common/registry.py`.
+- Дорогое открытие (flow, схема, принятый pattern) → короткая заметка в `.cursor/docs/` + ссылка из правила/`AGENTS.md`; новое соглашение — в `.cursor/PROJECT_PRACTICES.md` (+ журнал изменений).
+
+## Keep clean
+
+- Завершённые миграционные инструкции и временные workaround — удалять.
+- Битые ссылки на несуществующие пути — чинить.
+- Устаревшие golden examples — заменять.
+- Проверка блока: «Изменит ли это то, как агент выполнит задачу сегодня?» Нет → убрать из рабочего контекста.
